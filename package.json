@@ -1,0 +1,22 @@
+{
+  "name": "json-rpc-playground",
+  "private": true,
+  "type": "module",
+  "module": "src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@open-rpc/playground": "^1.1.2",
+    "@scalar/hono-api-reference": "^0.12.10",
+    "hono": "^4.13.9"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}

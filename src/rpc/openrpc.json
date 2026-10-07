@@ -1,0 +1,225 @@
+{
+  "openrpc": "1.3.2",
+  "info": {
+    "title": "Todo JSON-RPC API",
+    "description": "JSON-RPC 2.0 methods for Todo management. Endpoint: POST /rpc",
+    "version": "1.0.0"
+  },
+  "methods": [
+    {
+      "name": "todo:list",
+      "summary": "List all todos",
+      "tags": [{ "name": "Todos" }],
+      "params": [],
+      "result": {
+        "name": "ListTodosResult",
+        "description": "Array of todos",
+        "schema": {
+          "type": "array",
+          "items": { "$ref": "#/components/schemas/Todo" }
+        }
+      },
+      "examples": [
+        {
+          "name": "listTodosExample",
+          "params": {},
+          "result": {
+            "name": "listTodosResultExample",
+            "value": [
+              { "id": 1, "title": "Buy groceries", "completed": false },
+              { "id": 2, "title": "Read book", "completed": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "todo:get",
+      "summary": "Get todo by ID",
+      "tags": [{ "name": "Todos" }],
+      "params": [
+        {
+          "name": "id",
+          "description": "Todo ID",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "result": {
+        "name": "GetTodoResult",
+        "description": "Todo object",
+        "schema": { "$ref": "#/components/schemas/Todo" }
+      },
+      "errors": [
+        {
+          "code": -32000,
+          "message": "Resource not found",
+          "data": { "description": "Todo does not exist" }
+        },
+        {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": { "description": "params.id must be an integer" }
+        }
+      ],
+      "examples": [
+        {
+          "name": "getTodoExample",
+          "params": { "id": 1 },
+          "result": {
+            "name": "getTodoResultExample",
+            "value": { "id": 1, "title": "Buy groceries", "completed": false }
+          }
+        }
+      ]
+    },
+    {
+      "name": "todo:create",
+      "summary": "Create todo",
+      "tags": [{ "name": "Todos" }],
+      "params": [
+        {
+          "name": "title",
+          "description": "Todo title",
+          "required": true,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "completed",
+          "description": "Completed status",
+          "required": true,
+          "schema": { "type": "boolean" }
+        }
+      ],
+      "result": {
+        "name": "CreateTodoResult",
+        "description": "Created todo",
+        "schema": { "$ref": "#/components/schemas/Todo" }
+      },
+      "errors": [
+        {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": {
+            "description": "params.title must be a string and params.completed must be a boolean"
+          }
+        }
+      ],
+      "examples": [
+        {
+          "name": "createTodoExample",
+          "params": { "title": "Learn OpenRPC", "completed": false },
+          "result": {
+            "name": "createTodoResultExample",
+            "value": { "id": 3, "title": "Learn OpenRPC", "completed": false }
+          }
+        }
+      ]
+    },
+    {
+      "name": "todo:update",
+      "summary": "Update todo by ID",
+      "tags": [{ "name": "Todos" }],
+      "params": [
+        {
+          "name": "id",
+          "description": "Todo ID",
+          "required": true,
+          "schema": { "type": "integer" }
+        },
+        {
+          "name": "title",
+          "description": "Todo title",
+          "required": false,
+          "schema": { "type": "string" }
+        },
+        {
+          "name": "completed",
+          "description": "Completed status",
+          "required": false,
+          "schema": { "type": "boolean" }
+        }
+      ],
+      "result": {
+        "name": "UpdateTodoResult",
+        "description": "Updated todo",
+        "schema": { "$ref": "#/components/schemas/Todo" }
+      },
+      "errors": [
+        {
+          "code": -32000,
+          "message": "Resource not found",
+          "data": { "description": "Todo not found or not updated" }
+        },
+        {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": { "description": "id must be integer; title/completed types invalid" }
+        }
+      ],
+      "examples": [
+        {
+          "name": "updateTodoExample",
+          "params": { "id": 1, "completed": true },
+          "result": {
+            "name": "updateTodoResultExample",
+            "value": { "id": 1, "title": "Buy groceries", "completed": true }
+          }
+        }
+      ]
+    },
+    {
+      "name": "todo:delete",
+      "summary": "Delete todo by ID",
+      "tags": [{ "name": "Todos" }],
+      "params": [
+        {
+          "name": "id",
+          "description": "Todo ID",
+          "required": true,
+          "schema": { "type": "integer" }
+        }
+      ],
+      "result": {
+        "name": "DeleteTodoResult",
+        "description": "Deleted todo",
+        "schema": { "$ref": "#/components/schemas/Todo" }
+      },
+      "errors": [
+        {
+          "code": -32000,
+          "message": "Resource not found",
+          "data": { "description": "Todo not found or not deleted" }
+        },
+        {
+          "code": -32602,
+          "message": "Invalid params",
+          "data": { "description": "params.id must be an integer" }
+        }
+      ],
+      "examples": [
+        {
+          "name": "deleteTodoExample",
+          "params": { "id": 2 },
+          "result": {
+            "name": "deleteTodoResultExample",
+            "value": { "id": 2, "title": "Read book", "completed": true }
+          }
+        }
+      ]
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Todo": {
+        "type": "object",
+        "required": ["id", "title", "completed"],
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "completed": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}
