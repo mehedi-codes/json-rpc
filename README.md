@@ -153,4 +153,4 @@ This repo lets you poke at all of that in a runnable codebase you can actually r
 
 ## License
 
-MIT — do whatever you want with it.
+[MIT](./LICENSE) — do whatever you want with it.
