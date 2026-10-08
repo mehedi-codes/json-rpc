@@ -1,4 +1,4 @@
-# json-rpc-playground
+# json-rpc
 > Learn JSON-RPC 2.0 by Building It
 
 A side-by-side REST + JSON-RPC 2.0 API for Todo management, built to understand the practical differences between the two wire formats. This is a learning sandbox — no external dependencies, no build step, just code you can read and modify.
