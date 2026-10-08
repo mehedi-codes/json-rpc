@@ -3,8 +3,16 @@
 
 A side-by-side REST + JSON-RPC 2.0 API for Todo management, built to understand the practical differences between the two wire formats. This is a learning sandbox — no external dependencies, no build step, just code you can read and modify.
 
-**Stack:** Bun (runtime + package manager) · Hono (router) · TypeScript with `"erasableSyntaxOnly": true` (no emit, no build) · JSON-file database (zero external deps).
-**Documentation:** OpenAPI 3.0 (REST) + OpenRPC 1.3.2 (JSON-RPC) rendered via Scalar UI.
+## Tech Stack
+
+* **Runtime & Package Manager:** **Bun**
+* **Web Framework:** **Hono** (High-performance router)
+* **TypeScript Configuration:** `"erasableSyntaxOnly": true` *(Zero emit, zero build overhead)*
+* **Data Persistence:** Custom **JSON-file database** *(Zero external dependencies)*
+* **API Documentation & Specifications:**
+  * **REST API:** OpenAPI 3.0
+  * **JSON-RPC:** OpenRPC 1.3.2
+  * **Interactive UI:** Rendered via **Scalar UI**
 
 ---
 
@@ -71,9 +79,35 @@ Single endpoint: `POST /rpc` with JSON-RPC 2.0 envelope.
 | `todo:update` | `{ id: number, title?: string, completed?: boolean }` | `Todo` |
 | `todo:delete` | `{ id: number }` | `Todo` |
 
-**Request:** `{ "jsonrpc": "2.0", "method": "todo:list", "params": {}, "id": 1 }`
-**Success:** `{ "jsonrpc": "2.0", "result": [...], "id": 1 }`
-**Error:** `{ "jsonrpc": "2.0", "error": { "code": -32602, "message": "Invalid params", "data": "..." }, "id": 1 }`
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "todo:list",
+  "params": {},
+  "id": 1
+}
+````
+**Success:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": [...],
+    "id": 1
+}
+```
+**Error:**
+```json
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32602,
+    "message": "Invalid params",
+    "data": "..."
+  },
+  "id": 1
+}
+```
 
 **Alternative endpoint:** `POST /rpc/:method` — accepts either a full JSON-RPC envelope or a plain params object (auto-wrapped).
 
