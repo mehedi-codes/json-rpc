@@ -1,34 +1,25 @@
-# dependencies (bun install)
-node_modules
+# Private working notes
+iprn-methods.md
 
-# output
-out
-dist
-*.tgz
+# Dependencies
+node_modules/
 
-# code coverage
-coverage
-*.lcov
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 
-# logs
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
-
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# caches
-.eslintcache
-.cache
-*.tsbuildinfo
-
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs (none expected, but just in case)
+dist/
+build/
