@@ -1,33 +1,122 @@
-# json-rpc-playground — JSON-RPC 2.0, learned by doing
+# json-rpc-playground
+> Learn JSON-RPC 2.0 by Building It
 
-**Why:** we're building the IPRN Elite reseller-portal integration (`https://api.iprn-elite.com/v1.0`), and the backend talks JSON-RPC 2.0 while we know REST well. So the toy is a REST tasks API that we then **migrate to JSON-RPC 2.0** — the diff between the two wire formats is the lesson.
+A side-by-side REST + JSON-RPC 2.0 API for Todo management, built to understand the practical differences between the two wire formats. This is a learning sandbox — no external dependencies, no build step, just code you can read and modify.
 
-**Stack:** Bun (package manager + runtime) · Hono (router) · TypeScript (erasable syntax only — enforced by `"erasableSyntaxOnly": true` in `tsconfig.json`) · **lowdb** (JSON-file database). No build step.
+**Stack:** Bun (runtime + package manager) · Hono (router) · TypeScript with `"erasableSyntaxOnly": true` (no emit, no build) · JSON-file database (zero external deps).
+**Documentation:** OpenAPI 3.0 (REST) + OpenRPC 1.3.2 (JSON-RPC) rendered via Scalar UI.
 
-## Run
+---
+
+## Quick start
+
+```bash
+bun install       # install dependencies
+bun run dev       # start with file watching (http://localhost:3000)
+bun run start     # production start
+bun run typecheck # type-check only (tsc --noEmit)
+```
+
+---
+
+## Project structure
 
 ```
-bun install      # first time
-bun add lowdb    # Phase A dependency (JSON-file DB)
-bun run dev      # start, watch mode
-bun run typecheck  # tsc, no emit
+src/
+├── index.ts              # Bootstrap: Hono app, mounts routes, error handling, docs
+├── shared/
+│   ├── db.ts             # JSON-file database facade (read/write src/shared/db.json)
+│   └── db.json           # Database file (seeded with 200+ todos)
+├── types/
+│   └── todo.ts           # Domain types + JSON-RPC 2.0 envelope types
+├── service/
+│   └── todo.ts           # Business logic (CRUD operations)
+├── rest/
+│   ├── todo.ts           # REST routes: GET/POST /todos, GET/PATCH/DELETE /todos/:id
+│   └── openapi.json      # OpenAPI 3.0 spec (hand-written)
+├── rpc/
+│   ├── todo.ts           # JSON-RPC 2.0 handler: POST /rpc (methods: todo:*)
+│   └── openrpc.json      # OpenRPC 1.3.2 spec (hand-written)
+├── rpc-to-openapi.ts     # Converts OpenRPC → OpenAPI for Scalar UI at /docs/rpc
+└── error/
+    ├── error-code.ts     # JSON-RPC 2.0 standard error codes (-32700..-32603, -32000)
+    └── validation-error.ts # Domain validation error class
 ```
 
-## The plan
+---
 
-- **Phase A — REST tasks CRUD.** Design and write `src/store.ts` (lowdb facade over `src/db.json`), then the routes in `src/rest-api.ts` (`GET/POST/PUT/PATCH/DELETE /tasks`), mounted from `src/index.ts`.
-- **Phase B — migrate to JSON-RPC 2.0.** Same app, one `POST /rpc` endpoint: methods `task:list/get/create/update/remove`, request envelopes, notifications (no id), error objects, batches. No more per-resource routes.
-- **Phase C — reshape into an IPRN-style mock** (`account:get_join`, `trunk:get_list`, the `sms.realtime` poll loop). Working notes live in `iprn-methods.md`.
-- Quizzes arrive as HTML + Tailwind pages after each phase (the widget gets rebuilt when we get there).
+## API endpoints
 
-## Layout
+### REST (`/todos`)
 
-- `src/index.ts` — bootstrap only: create the Hono app, mount the wire modules, start the server (`Bun.serve`).
-- `src/rest-api.ts` — Phase A REST routes (`/tasks`, spec in its header).
-- `src/json-rpc.ts` — Phase B JSON-RPC endpoint (`POST /rpc`, methods `task:*`).
-- `src/store.ts` — lowdb facade; the only module that touches `src/db.json`.
-- `src/db.json` — the database file (lowdb, seeds `[]`).
+| Method | Path | Description |
+|--------|------|-------------|
+| GET    | `/todos` | List all todos |
+| POST   | `/todos` | Create todo (`{ title: string, completed: boolean }`) |
+| GET    | `/todos/:id` | Get todo by ID |
+| PATCH  | `/todos/:id` | Update todo (partial) |
+| DELETE | `/todos/:id` | Delete todo |
 
-## Authoring rule
+**Response envelope:** `{ success: boolean, message: string, data: Todo[] }`
 
-The AI teaches, narrates, and reviews — **the user writes every line of project code.** No AI-generated project code, no copy-paste.
+### JSON-RPC 2.0 (`/rpc`)
+
+Single endpoint: `POST /rpc` with JSON-RPC 2.0 envelope.
+
+| Method | Params | Result |
+|--------|--------|--------|
+| `todo:list` | `{}` | `Todo[]` |
+| `todo:get` | `{ id: number }` | `Todo` |
+| `todo:create` | `{ title: string, completed: boolean }` | `Todo` |
+| `todo:update` | `{ id: number, title?: string, completed?: boolean }` | `Todo` |
+| `todo:delete` | `{ id: number }` | `Todo` |
+
+**Request:** `{ "jsonrpc": "2.0", "method": "todo:list", "params": {}, "id": 1 }`
+**Success:** `{ "jsonrpc": "2.0", "result": [...], "id": 1 }`
+**Error:** `{ "jsonrpc": "2.0", "error": { "code": -32602, "message": "Invalid params", "data": "..." }, "id": 1 }`
+
+**Alternative endpoint:** `POST /rpc/:method` — accepts either a full JSON-RPC envelope or a plain params object (auto-wrapped).
+
+---
+
+## Documentation UIs
+
+| UI | URL | Spec |
+|----|-----|------|
+| REST (Scalar) | `http://localhost:3000/docs` | `src/rest/openapi.json` |
+| JSON-RPC (Scalar) | `http://localhost:3000/docs/rpc` | `src/rpc/openrpc.json` (converted to OpenAPI on the fly) |
+| Raw OpenAPI | `http://localhost:3000/openapi.json` | — |
+| Raw OpenRPC | `http://localhost:3000/openrpc.json` | — |
+
+The JSON-RPC Scalar UI is generated by `src/rpc-to-openapi.ts`, which transforms the OpenRPC spec into a pseudo-REST OpenAPI document so Scalar can render it.
+
+---
+
+## Design notes
+
+- **No ORM, no migrations** — `db.json` is the source of truth. `src/shared/db.ts` is the only module that touches the file.
+- **Service layer is transport-agnostic** — `src/service/todo.ts` has zero knowledge of REST or JSON-RPC. Both transports call the same functions.
+- **Type-safe JSON-RPC** — `src/types/todo.ts` defines `JsonRpcRequest`, `JsonRpcSuccess`, `JsonRpcFailure`, `JsonRpcResponse` with discriminated unions. The handler in `src/rpc/todo.ts` uses them for request parsing and response construction.
+- **Standard error codes** — Uses JSON-RPC 2.0 reserved codes (`Parse_Error: -32700`, `Invalid_Request: -32600`, `Method_Not_Found: -32601`, `Invalid_Params: -32602`, `Internal_Error: -32603`) plus a custom `Resource_Not_Found: -32000` for domain-level "not found".
+- **Erasable syntax only** — `tsconfig.json` enforces `"erasableSyntaxOnly": true`, `"noEmit": true`, `"module": "Preserve"`. TypeScript is used purely for type-checking; Bun executes `.ts` files directly.
+- **No build step** — `bun run dev` watches and restarts on changes. Production is `bun src/index.ts`.
+
+---
+
+## Why this exists
+
+JSON-RPC 2.0 looks simple on paper (one endpoint, method names, request/response envelopes). In practice, the differences from REST show up in:
+
+- **Batching** — multiple calls in one HTTP request
+- **Notifications** — fire-and-forget (no `id`, no response)
+- **Error objects** — structured codes vs HTTP status codes
+- **Transport independence** — works over WebSockets, stdio, message queues, not just HTTP
+- **Client generation** — OpenRPC tooling vs OpenAPI tooling
+
+This repo lets you poke at all of that in a runnable codebase you can actually read.
+
+---
+
+## License
+
+MIT — do whatever you want with it.
